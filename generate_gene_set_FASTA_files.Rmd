@@ -1,0 +1,323 @@
+---
+title: "Investigate the Alu Content of the MitoCarta2.0"
+output: html_document
+---
+
+```{r}
+##Download intra-genic and flanking sequences for MitoCarta2.0
+
+#source("https://bioconductor.org/biocLite.R")
+#biocLite("biomaRt")
+
+#load biomaRt and choose appropriate database
+library("biomaRt")
+
+#choose biomart
+#listMarts()
+ensembl=useMart("ENSEMBL_MART_ENSEMBL")
+
+#choose dataset
+#listDatasets(ensembl)
+ensembl = useDataset("hsapiens_gene_ensembl",mart=ensembl)
+
+
+#read in ensembl IDs for mitocarta; file must be in same directory where this script is being run
+mitocarta_eid<-readLines("Human.MitoCarta2.0.Eids.csv")
+
+#create table of ensembl gene ids and gene symbols for the mitocarta
+mc_eids_and_gs<-getBM(attributes=c("ensembl_gene_id","external_gene_name"),filters ="ensembl_gene_id", values = mitocarta_eid, mart=ensembl)
+
+#extract intra-genic sequences for genes corresponding to mitocarta eids
+mc_gene_exon_intron <- getSequence(id=mitocarta_eid, type="ensembl_gene_id", seqType="gene_exon_intron", mart = ensembl)
+
+#extracts upstream and downstream flanks for genes corresponding to mitocarta eids
+#occassionally biomart will generate an error and not be able to retrieve sequences matchiing the upstream_flank or downstream_flank filter; if this happens, rerun the command until the error is no longer generated
+mc_upstream <- getSequence(id=mitocarta_eid, type="ensembl_gene_id", seqType="gene_flank", upstream=5000, mart = ensembl)
+mc_downstream <- getSequence(id=mitocarta_eid, type="ensembl_gene_id", seqType="gene_flank", downstream=5000, mart = ensembl)
+
+#export sequences as FASTA files
+exportFASTA(mc_gene_exon_intron,"m_1_human_mc_gene-exon-intron.fasta")
+exportFASTA(mc_upstream,"m_1_human_mc_upstream.fasta")
+exportFASTA(mc_downstream,"m_1_human_mc_downstream.fasta")
+
+#calculate sequence lengths for mitocarta genes
+mc_seq_lengths<-nchar(as.character(mc_gene_exon_intron[,1]))
+
+#plot lengths (intra-genic + 5000bp flanks) in histogram
+histo_mc_lengths<-hist(log(mc_seq_lengths+10000),breaks=c(8,9.5,11,12.5,14,15.5))
+histo_mc_lengths
+
+
+
+
+##Download intra-genic and flanking sequences for non-mitochondrial genes
+
+#download all protein coding Ensembl IDs
+ensembl_ids_pc<-getBM(attributes="ensembl_gene_id",filters = "biotype", values = "protein_coding", mart=ensembl)
+
+#subtract out mitocarta Ensembl IDs
+ensembl_ids_pc_unlist<-unlist(ensembl_ids_pc,use.names = FALSE)
+no_mito_eids<-setdiff(ensembl_ids_pc_unlist,mitocarta_eid)
+
+#calculate lengths for all protein coding genes
+#download genomic start and end positions
+length_info_pc<-getBM(attributes=c("ensembl_gene_id","external_gene_name","start_position","end_position"),filters = "ensembl_gene_id", values =no_mito_eids, mart=ensembl)
+#head(length_info_pc)
+#subtract end position from start position
+length_info_pc<-cbind(length_info_pc[,1],length_info_pc[,2],length_info_pc[,4]-length_info_pc[,3])
+#head(length_info_pc)
+
+#need to account for 10,000 bp flanks in length estimates
+length_info_pc[,3]<-as.numeric(length_info_pc[,3])+10000
+
+#generate histogram of all non-mitochondrial protein coding genes
+histo_pc_lengths<-hist(log(as.numeric(length_info_pc[,3])),breaks=c(8,9.5,11,12.5,14,15.5))
+
+#extract length distribution information of MitoCarta to be used when size selecting random pc genes
+histo_counts_mc<-histo_mc_lengths$counts
+histo_breaks_mc<-histo_mc_lengths$breaks
+
+#creates subsample function to generate random subsample of non-mitocarta protein coding genes with the proper length distribution
+subsample <- function() {
+  for (x in 1:length(histo_counts_mc)) {
+    print(x)
+    assign(paste("seqs_in_bin_",as.character(x),sep =""),(sample(subset(length_info_pc, (as.numeric(length_info_pc[,3]) > exp(histo_breaks_mc[x]) & as.numeric(length_info_pc[,3]) <= exp(histo_breaks_mc[x+1])))[,1],histo_counts_mc[x])))
+  }
+  random_pc_eid<<-c(seqs_in_bin_1,seqs_in_bin_2,seqs_in_bin_3,seqs_in_bin_4,seqs_in_bin_5)
+  print(random_pc_eid)
+}
+
+#generates 10 lists of Ensembl IDs corresponding to randomly sampled non-mitochondrial genes
+ten_reps <- replicate(10, subsample())
+
+
+##Extracts intra-genic and flanking sequences for the first set of random non-mitochondiral genes
+x<-1
+#create table of ensembl gene ids and gene symbols for the sub-sample of PC genes
+rpc_eids_and_gs<-getBM(attributes=c("ensembl_gene_id","external_gene_name"),filters ="ensembl_gene_id", values = ten_reps[,x], mart=ensembl)
+#extract intra-genic sequences for genes corresponding to Eids
+rpc_gene_exon_intron <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_exon_intron", mart = ensembl)
+#extract 5000bp upstream flanks for genes corresponding to eids
+rpc_upstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", upstream=5000, mart = ensembl)
+#extract 5000bp downstream flanks for genes corresponding to eids
+rpc_downstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", downstream=5000, mart = ensembl)
+
+#export sequence sets as FASTA files
+exportFASTA(rpc_gene_exon_intron,paste("s",as.character(x),"human_rpc_gene_exon_intron.fasta",sep ="_"))
+exportFASTA(rpc_upstream,paste("s",as.character(x),"human_rpc_upstream.fasta",sep ="_"))
+exportFASTA(rpc_downstream,paste("s",as.character(x),"human_rpc_downstream.fasta",sep ="_"))
+
+#confirm random subsample has correct length distribution
+#calculate intra-genic sequence lengths (+10000bp to account for flanks) of random subsample
+#rpc_full_seq_lengths<-nchar(as.character(rpc_gene_exon_intron[,1]))+10000
+#plot as histogram
+#assign(paste("histo_rpc_lengths_s_",as.character(x),sep =""),hist(log(rpc_full_seq_lengths),breaks=c(8,9.5,11,12.5,14,15.5)))
+
+
+##Extracts intra-genic and flanking sequences for the second set of random non-mitochondiral genes
+x<-2
+#create table of ensembl gene ids and gene symbols for the sub-sample of PC genes
+rpc_eids_and_gs<-getBM(attributes=c("ensembl_gene_id","external_gene_name"),filters ="ensembl_gene_id", values = ten_reps[,x], mart=ensembl)
+#extract intra-genic sequences for genes corresponding to Eids
+rpc_gene_exon_intron <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_exon_intron", mart = ensembl)
+#extract 5000bp upstream flanks for genes corresponding to eids
+rpc_upstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", upstream=5000, mart = ensembl)
+#extract 5000bp downstream flanks for genes corresponding to eids
+rpc_downstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", downstream=5000, mart = ensembl)
+
+#export sequence sets as FASTA files
+exportFASTA(rpc_gene_exon_intron,paste("s",as.character(x),"human_rpc_gene_exon_intron.fasta",sep ="_"))
+exportFASTA(rpc_upstream,paste("s",as.character(x),"human_rpc_upstream.fasta",sep ="_"))
+exportFASTA(rpc_downstream,paste("s",as.character(x),"human_rpc_downstream.fasta",sep ="_"))
+
+#confirm random subsample has correct length distribution
+#calculate intra-genic sequence lengths (+10000bp to account for flanks) of random subsample
+#rpc_full_seq_lengths<-nchar(as.character(rpc_gene_exon_intron[,1]))+10000
+#plot as histogram
+#assign(paste("histo_rpc_lengths_s_",as.character(x),sep =""),hist(log(rpc_full_seq_lengths),breaks=c(8,9.5,11,12.5,14,15.5)))
+
+
+##Extracts intra-genic and flanking sequences for the third set of random non-mitochondiral genes
+x<-3
+#create table of ensembl gene ids and gene symbols for the sub-sample of PC genes
+rpc_eids_and_gs<-getBM(attributes=c("ensembl_gene_id","external_gene_name"),filters ="ensembl_gene_id", values = ten_reps[,x], mart=ensembl)
+#extract intra-genic sequences for genes corresponding to Eids
+rpc_gene_exon_intron <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_exon_intron", mart = ensembl)
+#extract 5000bp upstream flanks for genes corresponding to eids
+rpc_upstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", upstream=5000, mart = ensembl)
+#extract 5000bp downstream flanks for genes corresponding to eids
+rpc_downstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", downstream=5000, mart = ensembl)
+
+#export sequence sets as FASTA files
+exportFASTA(rpc_gene_exon_intron,paste("s",as.character(x),"human_rpc_gene_exon_intron.fasta",sep ="_"))
+exportFASTA(rpc_upstream,paste("s",as.character(x),"human_rpc_upstream.fasta",sep ="_"))
+exportFASTA(rpc_downstream,paste("s",as.character(x),"human_rpc_downstream.fasta",sep ="_"))
+
+#confirm random subsample has correct length distribution
+#calculate intra-genic sequence lengths (+10000bp to account for flanks) of random subsample
+#rpc_full_seq_lengths<-nchar(as.character(rpc_gene_exon_intron[,1]))+10000
+#plot as histogram
+#assign(paste("histo_rpc_lengths_s_",as.character(x),sep =""),hist(log(rpc_full_seq_lengths),breaks=c(8,9.5,11,12.5,14,15.5)))
+
+
+##Extracts intra-genic and flanking sequences for the fourth set of random non-mitochondiral genes
+x<-4
+#create table of ensembl gene ids and gene symbols for the sub-sample of PC genes
+rpc_eids_and_gs<-getBM(attributes=c("ensembl_gene_id","external_gene_name"),filters ="ensembl_gene_id", values = ten_reps[,x], mart=ensembl)
+#extract intra-genic sequences for genes corresponding to Eids
+rpc_gene_exon_intron <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_exon_intron", mart = ensembl)
+#extract 5000bp upstream flanks for genes corresponding to eids
+rpc_upstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", upstream=5000, mart = ensembl)
+#extract 5000bp downstream flanks for genes corresponding to eids
+rpc_downstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", downstream=5000, mart = ensembl)
+
+#export sequence sets as FASTA files
+exportFASTA(rpc_gene_exon_intron,paste("s",as.character(x),"human_rpc_gene_exon_intron.fasta",sep ="_"))
+exportFASTA(rpc_upstream,paste("s",as.character(x),"human_rpc_upstream.fasta",sep ="_"))
+exportFASTA(rpc_downstream,paste("s",as.character(x),"human_rpc_downstream.fasta",sep ="_"))
+
+#confirm random subsample has correct length distribution
+#calculate intra-genic sequence lengths (+10000bp to account for flanks) of random subsample
+#rpc_full_seq_lengths<-nchar(as.character(rpc_gene_exon_intron[,1]))+10000
+#plot as histogram
+#assign(paste("histo_rpc_lengths_s_",as.character(x),sep =""),hist(log(rpc_full_seq_lengths),breaks=c(8,9.5,11,12.5,14,15.5)))
+
+
+##Extracts intra-genic and flanking sequences for the fifth set of random non-mitochondiral genes
+x<-5
+#create table of ensembl gene ids and gene symbols for the sub-sample of PC genes
+rpc_eids_and_gs<-getBM(attributes=c("ensembl_gene_id","external_gene_name"),filters ="ensembl_gene_id", values = ten_reps[,x], mart=ensembl)
+#extract intra-genic sequences for genes corresponding to Eids
+rpc_gene_exon_intron <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_exon_intron", mart = ensembl)
+#extract 5000bp upstream flanks for genes corresponding to eids
+rpc_upstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", upstream=5000, mart = ensembl)
+#extract 5000bp downstream flanks for genes corresponding to eids
+rpc_downstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", downstream=5000, mart = ensembl)
+
+#export sequence sets as FASTA files
+exportFASTA(rpc_gene_exon_intron,paste("s",as.character(x),"human_rpc_gene_exon_intron.fasta",sep ="_"))
+exportFASTA(rpc_upstream,paste("s",as.character(x),"human_rpc_upstream.fasta",sep ="_"))
+exportFASTA(rpc_downstream,paste("s",as.character(x),"human_rpc_downstream.fasta",sep ="_"))
+
+#confirm random subsample has correct length distribution
+#calculate intra-genic sequence lengths (+10000bp to account for flanks) of random subsample
+#rpc_full_seq_lengths<-nchar(as.character(rpc_gene_exon_intron[,1]))+10000
+#plot as histogram
+#assign(paste("histo_rpc_lengths_s_",as.character(x),sep =""),hist(log(rpc_full_seq_lengths),breaks=c(8,9.5,11,12.5,14,15.5)))
+
+
+##Extracts intra-genic and flanking sequences for the sixth set of random non-mitochondiral genes
+x<-6
+#create table of ensembl gene ids and gene symbols for the sub-sample of PC genes
+rpc_eids_and_gs<-getBM(attributes=c("ensembl_gene_id","external_gene_name"),filters ="ensembl_gene_id", values = ten_reps[,x], mart=ensembl)
+#extract intra-genic sequences for genes corresponding to Eids
+rpc_gene_exon_intron <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_exon_intron", mart = ensembl)
+#extract 5000bp upstream flanks for genes corresponding to eids
+rpc_upstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", upstream=5000, mart = ensembl)
+#extract 5000bp downstream flanks for genes corresponding to eids
+rpc_downstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", downstream=5000, mart = ensembl)
+
+#export sequence sets as FASTA files
+exportFASTA(rpc_gene_exon_intron,paste("s",as.character(x),"human_rpc_gene_exon_intron.fasta",sep ="_"))
+exportFASTA(rpc_upstream,paste("s",as.character(x),"human_rpc_upstream.fasta",sep ="_"))
+exportFASTA(rpc_downstream,paste("s",as.character(x),"human_rpc_downstream.fasta",sep ="_"))
+
+#confirm random subsample has correct length distribution
+#calculate intra-genic sequence lengths (+10000bp to account for flanks) of random subsample
+#rpc_full_seq_lengths<-nchar(as.character(rpc_gene_exon_intron[,1]))+10000
+#plot as histogram
+#assign(paste("histo_rpc_lengths_s_",as.character(x),sep =""),hist(log(rpc_full_seq_lengths),breaks=c(8,9.5,11,12.5,14,15.5)))
+
+
+##Extracts intra-genic and flanking sequences for the seventh set of random non-mitochondiral genes
+x<-7
+#create table of ensembl gene ids and gene symbols for the sub-sample of PC genes
+rpc_eids_and_gs<-getBM(attributes=c("ensembl_gene_id","external_gene_name"),filters ="ensembl_gene_id", values = ten_reps[,x], mart=ensembl)
+#extract intra-genic sequences for genes corresponding to Eids
+rpc_gene_exon_intron <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_exon_intron", mart = ensembl)
+#extract 5000bp upstream flanks for genes corresponding to eids
+rpc_upstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", upstream=5000, mart = ensembl)
+#extract 5000bp downstream flanks for genes corresponding to eids
+rpc_downstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", downstream=5000, mart = ensembl)
+
+#export sequence sets as FASTA files
+exportFASTA(rpc_gene_exon_intron,paste("s",as.character(x),"human_rpc_gene_exon_intron.fasta",sep ="_"))
+exportFASTA(rpc_upstream,paste("s",as.character(x),"human_rpc_upstream.fasta",sep ="_"))
+exportFASTA(rpc_downstream,paste("s",as.character(x),"human_rpc_downstream.fasta",sep ="_"))
+
+#confirm random subsample has correct length distribution
+#calculate intra-genic sequence lengths (+10000bp to account for flanks) of random subsample
+#rpc_full_seq_lengths<-nchar(as.character(rpc_gene_exon_intron[,1]))+10000
+#plot as histogram
+#assign(paste("histo_rpc_lengths_s_",as.character(x),sep =""),hist(log(rpc_full_seq_lengths),breaks=c(8,9.5,11,12.5,14,15.5)))
+
+
+##Extracts intra-genic and flanking sequences for the eighth set of random non-mitochondiral genes
+x<-8
+#create table of ensembl gene ids and gene symbols for the sub-sample of PC genes
+rpc_eids_and_gs<-getBM(attributes=c("ensembl_gene_id","external_gene_name"),filters ="ensembl_gene_id", values = ten_reps[,x], mart=ensembl)
+#extract intra-genic sequences for genes corresponding to Eids
+rpc_gene_exon_intron <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_exon_intron", mart = ensembl)
+#extract 5000bp upstream flanks for genes corresponding to eids
+rpc_upstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", upstream=5000, mart = ensembl)
+#extract 5000bp downstream flanks for genes corresponding to eids
+rpc_downstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", downstream=5000, mart = ensembl)
+
+#export sequence sets as FASTA files
+exportFASTA(rpc_gene_exon_intron,paste("s",as.character(x),"human_rpc_gene_exon_intron.fasta",sep ="_"))
+exportFASTA(rpc_upstream,paste("s",as.character(x),"human_rpc_upstream.fasta",sep ="_"))
+exportFASTA(rpc_downstream,paste("s",as.character(x),"human_rpc_downstream.fasta",sep ="_"))
+
+#confirm random subsample has correct length distribution
+#calculate intra-genic sequence lengths (+10000bp to account for flanks) of random subsample
+#rpc_full_seq_lengths<-nchar(as.character(rpc_gene_exon_intron[,1]))+10000
+#plot as histogram
+#assign(paste("histo_rpc_lengths_s_",as.character(x),sep =""),hist(log(rpc_full_seq_lengths),breaks=c(8,9.5,11,12.5,14,15.5)))
+
+
+##Extracts intra-genic and flanking sequences for the ninth set of random non-mitochondiral genes
+x<-9
+#create table of ensembl gene ids and gene symbols for the sub-sample of PC genes
+rpc_eids_and_gs<-getBM(attributes=c("ensembl_gene_id","external_gene_name"),filters ="ensembl_gene_id", values = ten_reps[,x], mart=ensembl)
+#extract intra-genic sequences for genes corresponding to Eids
+rpc_gene_exon_intron <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_exon_intron", mart = ensembl)
+#extract 5000bp upstream flanks for genes corresponding to eids
+rpc_upstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", upstream=5000, mart = ensembl)
+#extract 5000bp downstream flanks for genes corresponding to eids
+rpc_downstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", downstream=5000, mart = ensembl)
+
+#export sequence sets as FASTA files
+exportFASTA(rpc_gene_exon_intron,paste("s",as.character(x),"human_rpc_gene_exon_intron.fasta",sep ="_"))
+exportFASTA(rpc_upstream,paste("s",as.character(x),"human_rpc_upstream.fasta",sep ="_"))
+exportFASTA(rpc_downstream,paste("s",as.character(x),"human_rpc_downstream.fasta",sep ="_"))
+
+#confirm random subsample has correct length distribution
+#calculate intra-genic sequence lengths (+10000bp to account for flanks) of random subsample
+#rpc_full_seq_lengths<-nchar(as.character(rpc_gene_exon_intron[,1]))+10000
+#plot as histogram
+#assign(paste("histo_rpc_lengths_s_",as.character(x),sep =""),hist(log(rpc_full_seq_lengths),breaks=c(8,9.5,11,12.5,14,15.5)))
+
+
+##Extracts intra-genic and flanking sequences for the tenth set of random non-mitochondiral genes
+x<-10
+#create table of ensembl gene ids and gene symbols for the sub-sample of PC genes
+rpc_eids_and_gs<-getBM(attributes=c("ensembl_gene_id","external_gene_name"),filters ="ensembl_gene_id", values = ten_reps[,x], mart=ensembl)
+#extract intra-genic sequences for genes corresponding to Eids
+rpc_gene_exon_intron <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_exon_intron", mart = ensembl)
+#extract 5000bp upstream flanks for genes corresponding to eids
+rpc_upstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", upstream=5000, mart = ensembl)
+#extract 5000bp downstream flanks for genes corresponding to eids
+rpc_downstream <- getSequence(id=ten_reps[,x], type="ensembl_gene_id", seqType="gene_flank", downstream=5000, mart = ensembl)
+
+#export sequence sets as FASTA files
+exportFASTA(rpc_gene_exon_intron,paste("s",as.character(x),"human_rpc_gene_exon_intron.fasta",sep ="_"))
+exportFASTA(rpc_upstream,paste("s",as.character(x),"human_rpc_upstream.fasta",sep ="_"))
+exportFASTA(rpc_downstream,paste("s",as.character(x),"human_rpc_downstream.fasta",sep ="_"))
+
+#confirm random subsample has correct length distribution
+#calculate intra-genic sequence lengths (+10000bp to account for flanks) of random subsample
+#rpc_full_seq_lengths<-nchar(as.character(rpc_gene_exon_intron[,1]))+10000
+#plot as histogram
+#assign(paste("histo_rpc_lengths_s_",as.character(x),sep =""),hist(log(rpc_full_seq_lengths),breaks=c(8,9.5,11,12.5,14,15.5)))
+
+```
