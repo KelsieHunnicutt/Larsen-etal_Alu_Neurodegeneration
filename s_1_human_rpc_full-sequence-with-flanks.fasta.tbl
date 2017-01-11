@@ -1,0 +1,50 @@
+==================================================
+file name: s_1_Non-MitoCarta_Full_Sequences_with_Flanks.fasta
+sequences:          1145
+total length:   67665672 bp  (67593824 bp excl N/X-runs)
+GC level:         43.28 %
+bases masked:   30239437 bp ( 44.69 %)
+==================================================
+               number of      length   percentage
+               elements*    occupied  of sequence
+--------------------------------------------------
+SINEs:            48523     11337293 bp   16.75 %
+      ALUs        35002      9332574 bp   13.79 %
+      MIRs        13350      1983802 bp    2.93 %
+
+LINEs:            21337     11363581 bp   16.79 %
+      LINE1       11286      8684092 bp   12.83 %
+      LINE2        8650      2370105 bp    3.50 %
+      L3/CR1       1061       230654 bp    0.34 %
+
+LTR elements:      8392      3963766 bp    5.86 %
+      ERVL         1710       786009 bp    1.16 %
+      ERVL-MaLRs   4120      1669677 bp    2.47 %
+      ERV_classI   1994      1243956 bp    1.84 %
+      ERV_classII   152       154776 bp    0.23 %
+
+DNA elements:     10788      2420865 bp    3.58 %
+     hAT-Charlie   5778      1141554 bp    1.69 %
+     TcMar-Tigger  2635       848055 bp    1.25 %
+
+Unclassified:       232       122933 bp    0.18 %
+
+Total interspersed repeats: 29208438 bp   43.17 %
+
+
+Small RNA:          345        34053 bp    0.05 %
+
+Satellites:         135        49934 bp    0.07 %
+Simple repeats:   16640       831414 bp    1.23 %
+Low complexity:    2095       120351 bp    0.18 %
+==================================================
+
+* most repeats fragmented by insertions or deletions
+  have been counted as one element
+                                                      
+
+The query species was assumed to be homo sapiens  
+RepeatMasker version open-4.0.6 , sensitive mode
+                                 
+run with rmblastn version 2.2.27+
+RepBase Update 20160829, RM database version 20160829

@@ -1,0 +1,50 @@
+==================================================
+file name: s_9_rpc_downstream.fasta 
+sequences:          1145
+total length:    5725000 bp  (5718272 bp excl N/X-runs)
+GC level:         46.85 %
+bases masked:    2463568 bp ( 43.03 %)
+==================================================
+               number of      length   percentage
+               elements*    occupied  of sequence
+--------------------------------------------------
+SINEs:             4740      1123866 bp   19.63 %
+      ALUs         3865      1004296 bp   17.54 %
+      MIRs          874       119540 bp    2.09 %
+
+LINEs:             1563       650742 bp   11.37 %
+      LINE1         943       509802 bp    8.90 %
+      LINE2         552       125430 bp    2.19 %
+      L3/CR1         42         9503 bp    0.17 %
+
+LTR elements:       937       415028 bp    7.25 %
+      ERVL          208        90168 bp    1.57 %
+      ERVL-MaLRs    392       144422 bp    2.52 %
+      ERV_classI    255       141016 bp    2.46 %
+      ERV_classII    26        25676 bp    0.45 %
+
+DNA elements:       780       167600 bp    2.93 %
+     hAT-Charlie    414        73423 bp    1.28 %
+     TcMar-Tigger   192        62703 bp    1.10 %
+
+Unclassified:        18         6033 bp    0.11 %
+
+Total interspersed repeats:  2363269 bp   41.28 %
+
+
+Small RNA:           44         3666 bp    0.06 %
+
+Satellites:          26        15610 bp    0.27 %
+Simple repeats:    1308        66636 bp    1.16 %
+Low complexity:     244        14417 bp    0.25 %
+==================================================
+
+* most repeats fragmented by insertions or deletions
+  have been counted as one element
+                                                      
+
+The query species was assumed to be homo sapiens  
+RepeatMasker version open-4.0.6 , sensitive mode
+                                 
+run with rmblastn version 2.2.27+
+RepBase Update 20160829, RM database version 20160829

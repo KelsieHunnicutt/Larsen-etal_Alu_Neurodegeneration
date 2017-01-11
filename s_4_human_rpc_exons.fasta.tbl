@@ -1,0 +1,50 @@
+==================================================
+file name: s_4_rpc_exons.fasta      
+sequences:         25341
+total length:    8276080 bp  (8276080 bp excl N/X-runs)
+GC level:         50.46 %
+bases masked:     827358 bp ( 10.00 %)
+==================================================
+               number of      length   percentage
+               elements*    occupied  of sequence
+--------------------------------------------------
+SINEs:             1964       356921 bp    4.31 %
+      ALUs         1353       281734 bp    3.40 %
+      MIRs          602        74465 bp    0.90 %
+
+LINEs:              753       160275 bp    1.94 %
+      LINE1         360       101826 bp    1.23 %
+      LINE2         318        47848 bp    0.58 %
+      L3/CR1         56         6753 bp    0.08 %
+
+LTR elements:       417       108528 bp    1.31 %
+      ERVL           91        21453 bp    0.26 %
+      ERVL-MaLRs    181        48287 bp    0.58 %
+      ERV_classI    120        31711 bp    0.38 %
+      ERV_classII    10         4642 bp    0.06 %
+
+DNA elements:       465        74621 bp    0.90 %
+     hAT-Charlie    253        37452 bp    0.45 %
+     TcMar-Tigger   130        24938 bp    0.30 %
+
+Unclassified:        10         2594 bp    0.03 %
+
+Total interspersed repeats:   702939 bp    8.49 %
+
+
+Small RNA:           17         1227 bp    0.01 %
+
+Satellites:          14         4239 bp    0.05 %
+Simple repeats:    2292        99049 bp    1.20 %
+Low complexity:     380        20325 bp    0.25 %
+==================================================
+
+* most repeats fragmented by insertions or deletions
+  have been counted as one element
+                                                      
+
+The query species was assumed to be homo sapiens  
+RepeatMasker version open-4.0.6 , sensitive mode
+                                 
+run with rmblastn version 2.2.27+
+RepBase Update 20160829, RM database version 20160829

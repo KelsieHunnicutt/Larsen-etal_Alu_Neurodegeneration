@@ -1,0 +1,50 @@
+==================================================
+file name: s_2_rpc_gene_exon_intron.fasta
+sequences:          1145
+total length:   51731631 bp  (51731631 bp excl N/X-runs)
+GC level:         43.30 %
+bases masked:   22237453 bp ( 42.99 %)
+==================================================
+               number of      length   percentage
+               elements*    occupied  of sequence
+--------------------------------------------------
+SINEs:            36526      8634721 bp   16.69 %
+      ALUs        26682      7173354 bp   13.87 %
+      MIRs         9723      1445720 bp    2.79 %
+
+LINEs:            15673      8181865 bp   15.82 %
+      LINE1        8288      6239001 bp   12.06 %
+      LINE2        6294      1690478 bp    3.27 %
+      L3/CR1        801       177688 bp    0.34 %
+
+LTR elements:      5768      2694904 bp    5.21 %
+      ERVL         1260       583862 bp    1.13 %
+      ERVL-MaLRs   2924      1165012 bp    2.25 %
+      ERV_classI   1221       797030 bp    1.54 %
+      ERV_classII    98        85079 bp    0.16 %
+
+DNA elements:      8101      1853717 bp    3.58 %
+     hAT-Charlie   4426       890499 bp    1.72 %
+     TcMar-Tigger  2035       676824 bp    1.31 %
+
+Unclassified:       188       108899 bp    0.21 %
+
+Total interspersed repeats: 21474106 bp   41.51 %
+
+
+Small RNA:          243        26278 bp    0.05 %
+
+Satellites:          75        12724 bp    0.02 %
+Simple repeats:   12507       639600 bp    1.24 %
+Low complexity:    1512        87278 bp    0.17 %
+==================================================
+
+* most repeats fragmented by insertions or deletions
+  have been counted as one element
+                                                      
+
+The query species was assumed to be homo sapiens  
+RepeatMasker version open-4.0.6 , sensitive mode
+                                 
+run with rmblastn version 2.2.27+
+RepBase Update 20160829, RM database version 20160829

@@ -1,0 +1,50 @@
+==================================================
+file name: mc_upstream.fasta        
+sequences:          1145
+total length:    5719671 bp  (5719671 bp excl N/X-runs)
+GC level:         46.44 %
+bases masked:    2755067 bp ( 48.17 %)
+==================================================
+               number of      length   percentage
+               elements*    occupied  of sequence
+--------------------------------------------------
+SINEs:             5843      1384226 bp   24.20 %
+      ALUs         4770      1241630 bp   21.71 %
+      MIRs         1067       141975 bp    2.48 %
+
+LINEs:             1750       600639 bp   10.50 %
+      LINE1         877       393328 bp    6.88 %
+      LINE2         799       192806 bp    3.37 %
+      L3/CR1         53         9614 bp    0.17 %
+
+LTR elements:      1084       495509 bp    8.66 %
+      ERVL          182        73640 bp    1.29 %
+      ERVL-MaLRs    369       125093 bp    2.19 %
+      ERV_classI    442       245097 bp    4.29 %
+      ERV_classII    48        41094 bp    0.72 %
+
+DNA elements:       844       180473 bp    3.16 %
+     hAT-Charlie    465        87914 bp    1.54 %
+     TcMar-Tigger   193        57437 bp    1.00 %
+
+Unclassified:        31        15038 bp    0.26 %
+
+Total interspersed repeats:  2675885 bp   46.78 %
+
+
+Small RNA:           62         6617 bp    0.12 %
+
+Satellites:           5          950 bp    0.02 %
+Simple repeats:    1319        59500 bp    1.04 %
+Low complexity:     198        12438 bp    0.22 %
+==================================================
+
+* most repeats fragmented by insertions or deletions
+  have been counted as one element
+                                                      
+
+The query species was assumed to be homo sapiens  
+RepeatMasker version open-4.0.6 , sensitive mode
+                                 
+run with rmblastn version 2.2.27+
+RepBase Update 20160829, RM database version 20160829
